@@ -5,12 +5,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.tomasps.slrummanager.domain.model.Server
 import com.tomasps.slrummanager.domain.model.ServerStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,6 +23,8 @@ fun ServersScreen(
     viewModel: ServersViewModel = hiltViewModel()
 ) {
     val servers by viewModel.servers.collectAsState()
+    val scope = rememberCoroutineScope()
+    var serverToDelete by remember { mutableStateOf<Server?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Servers") }) },
@@ -48,10 +52,56 @@ fun ServersScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(servers, key = { it.server.id.toString() }) { item ->
-                    ServerCard(item = item, onClick = { onServerClick(item.server.id.toString()) })
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { value ->
+                            if (value == SwipeToDismissBoxValue.EndToStart) {
+                                serverToDelete = item.server
+                            }
+                            false // don't auto-dismiss — wait for confirmation
+                        }
+                    )
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromStartToEnd = false,
+                        backgroundContent = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    ) {
+                        ServerCard(item = item, onClick = { onServerClick(item.server.id.toString()) })
+                    }
                 }
             }
         }
+    }
+
+    serverToDelete?.let { server ->
+        AlertDialog(
+            onDismissRequest = { serverToDelete = null },
+            title = { Text("Delete server?") },
+            text = { Text("Remove \"${server.name}\" (${server.hostname})? This cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteServer(server)
+                        serverToDelete = null
+                    }
+                ) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { serverToDelete = null }) { Text("Cancel") }
+            }
+        )
     }
 }
 
