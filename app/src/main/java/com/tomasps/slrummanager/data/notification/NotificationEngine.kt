@@ -24,6 +24,7 @@ class NotificationEngine @Inject constructor(
         const val CHANNEL_JOB_STATE = "job_state_changes"
         const val CHANNEL_JOB_ALERTS = "job_alerts"
         const val CHANNEL_CLUSTER_EVENTS = "cluster_events"
+        const val CHANNEL_LIVE_UPDATES = "live_updates"
     }
 
     init {
@@ -41,6 +42,11 @@ class NotificationEngine @Inject constructor(
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_CLUSTER_EVENTS, "Cluster Events", NotificationManager.IMPORTANCE_HIGH)
         )
+        manager.createNotificationChannel(
+            NotificationChannel(CHANNEL_LIVE_UPDATES, "Running Jobs", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Live progress for running SLURM jobs"
+            }
+        )
     }
 
     fun notifyStateChange(event: StateChangeEvent) {
@@ -53,7 +59,10 @@ class NotificationEngine @Inject constructor(
             putExtra("jobId", event.job.jobId)
             putExtra("serverId", event.serverId.toString())
         }
-        val pi = PendingIntent.getActivity(context, notifId, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val pi = PendingIntent.getActivity(
+            context, notifId, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_JOB_STATE)
             .setSmallIcon(R.drawable.ic_notification)
@@ -93,17 +102,38 @@ class NotificationEngine @Inject constructor(
 
     fun postLiveUpdateNotification(jobId: String, jobName: String, elapsedMs: Long, state: JobState) {
         val notifId = ("live_$jobId").hashCode()
+
         if (state.isTerminal) {
             NotificationManagerCompat.from(context).cancel(notifId)
             return
         }
+
         val elapsed = formatElapsed(elapsedMs)
-        val builder = NotificationCompat.Builder(context, CHANNEL_JOB_STATE)
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("jobId", jobId)
+        }
+        val pi = PendingIntent.getActivity(
+            context, notifId, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        // Live Update notification — ongoing pill in the notification shade, updated each poll.
+        // Uses NotificationCompat for compatibility across all API levels.
+        // When Notification.LiveUpdateExtras becomes stable in a future SDK release,
+        // this can be enhanced with setLiveUpdateExtras() on API 36+.
+        val isCompleting = state == JobState.COMPLETING
+        val builder = NotificationCompat.Builder(context, CHANNEL_LIVE_UPDATES)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Running: $jobName")
+            .setContentTitle(if (isCompleting) "Completing: $jobName" else "Running: $jobName")
             .setContentText("Elapsed: $elapsed")
             .setOngoing(true)
-            .setProgress(0, 0, true)
+            .setOnlyAlertOnce(true)
+            .setProgress(0, 0, !isCompleting)
+            .setContentIntent(pi)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
         runCatching { NotificationManagerCompat.from(context).notify(notifId, builder.build()) }
     }
