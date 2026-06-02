@@ -4,6 +4,8 @@ import com.tomasps.slrummanager.domain.model.AuthMethod
 import com.tomasps.slrummanager.domain.model.Server
 import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier
+import net.schmizz.sshj.userauth.keyprovider.KeyProviderUtil
+import net.schmizz.sshj.userauth.keyprovider.OpenSSHKeyFile
 import java.io.StringReader
 import java.util.concurrent.TimeUnit
 
@@ -25,10 +27,9 @@ class SshClient {
                 AuthMethod.PASSWORD ->
                     client.authPassword(server.username, password ?: error("No password provided"))
                 AuthMethod.SSH_KEY -> {
-                    val keyProvider = client.loadKeys(
-                        StringReader(privateKeyPem ?: error("No private key provided")), null, null
-                    )
-                    client.authPublickey(server.username, keyProvider)
+                    val keyFile = OpenSSHKeyFile()
+                    keyFile.init(StringReader(privateKeyPem ?: error("No private key provided")))
+                    client.authPublickey(server.username, keyFile)
                 }
             }
             return commands.map { cmd ->
