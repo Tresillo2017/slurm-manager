@@ -56,7 +56,12 @@ fun OnboardingScreen(
                     state = state,
                     onUpdate = viewModel::update,
                     onPickKey = { keyFilePicker.launch(arrayOf("*/*")) },
-                    onNext = { scope.launch { pagerState.animateScrollToPage(2) } }
+                    onNext = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(2)
+                            viewModel.testConnection(context)
+                        }
+                    }
                 )
                 2 -> TestConnectionPage(
                     state = state,
@@ -154,7 +159,6 @@ private fun TestConnectionPage(
     onTest: () -> Unit,
     onFinish: () -> Unit
 ) {
-    LaunchedEffect(Unit) { onTest() }
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
