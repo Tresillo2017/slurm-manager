@@ -81,8 +81,13 @@ dependencies {
     // Security
     implementation(libs.security.crypto)
 
-    // SSH
-    implementation(libs.sshj)
+    // SSH + full BouncyCastle (Android ships a stripped BC missing EC, X25519, etc.)
+    // Exclude sshj's transitive BC to avoid duplicate class conflicts
+    implementation(libs.sshj) {
+        exclude(group = "org.bouncycastle")
+    }
+    implementation(libs.bouncycastle.bcprov)
+    implementation(libs.bouncycastle.bcpkix)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)

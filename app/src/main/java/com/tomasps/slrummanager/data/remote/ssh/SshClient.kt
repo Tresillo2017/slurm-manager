@@ -20,14 +20,7 @@ class SshClient {
 
     private fun buildConfig(): DefaultConfig {
         val config = DefaultConfig()
-        Log.d(TAG, "All kex algorithms: ${config.keyExchangeFactories.map { it.name }}")
-        // curve25519-sha256 uses X25519 internally — Android BC doesn't support it
-        val supported = config.keyExchangeFactories.filter { factory ->
-            val name = factory.name.lowercase()
-            !name.contains("curve25519") && !name.contains("x25519") && !name.contains("x448")
-        }
-        Log.d(TAG, "Filtered kex algorithms: ${supported.map { it.name }}")
-        config.keyExchangeFactories = supported
+        Log.d(TAG, "kex algorithms: ${config.keyExchangeFactories.map { it.name }}")
         return config
     }
 
