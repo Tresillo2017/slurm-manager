@@ -1,6 +1,10 @@
 package com.tomasps.slrummanager.presentation.onboarding
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomasps.slrummanager.data.credential.CredentialStore
@@ -33,10 +37,13 @@ data class OnboardingUiState(
     val testError: String = ""
 )
 
+private val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val serverRepository: ServerRepository,
-    private val credentialStore: CredentialStore
+    private val credentialStore: CredentialStore,
+    private val dataStore: DataStore<Preferences>
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingUiState())
@@ -64,7 +71,7 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    fun saveServer(context: Context, onDone: () -> Unit) {
+    fun saveServer(context: Context, isFirstServer: Boolean = true, onDone: () -> Unit) {
         val s = _state.value
         val server = buildServer(s)
         viewModelScope.launch {
@@ -75,6 +82,9 @@ class OnboardingViewModel @Inject constructor(
                 credentialStore.saveSshPrivateKey(server.id.toString(), s.privateKeyPem)
             }
             PollWorker.enqueue(context, server.id, server.pollingIntervalMinutes)
+            if (isFirstServer) {
+                dataStore.edit { it[KEY_ONBOARDING_DONE] = true }
+            }
             onDone()
         }
     }

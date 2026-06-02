@@ -66,7 +66,7 @@ fun OnboardingScreen(
                 2 -> TestConnectionPage(
                     state = state,
                     onTest = { viewModel.testConnection(context) },
-                    onFinish = { viewModel.saveServer(context, onFinished) }
+                    onFinish = { viewModel.saveServer(context, isFirstServer = !addServerOnly, onFinished) }
                 )
             }
         }
