@@ -87,7 +87,7 @@ fun SubmitJobSheet(
                     value = state.scriptContent,
                     onValueChange = { viewModel.update { copy(scriptContent = it) } },
                     modifier = Modifier.fillMaxSize().padding(8.dp),
-                    textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                 )
             }
 
