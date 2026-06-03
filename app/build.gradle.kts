@@ -8,13 +8,13 @@ plugins {
 }
 
 android {
-    namespace = "com.tomasps.slrummanager"
-    compileSdk = 36
+    namespace = "com.tomasps.slurmmanager"
+    compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.tomasps.slrummanager"
+        applicationId = "com.tomasps.slurmmanager"
         minSdk = 30
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -48,9 +48,11 @@ dependencies {
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.material3)
+    // 1.5.0-alpha17 required for LoadingIndicator (M3 Expressive)
+    implementation("androidx.compose.material3:material3:1.5.0-alpha20")
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.ui.text.google.fonts)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -66,6 +68,10 @@ dependencies {
 
     // Material Icons Extended
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Material 3 Adaptive (window size classes, navigation suite, layouts)
+    implementation(libs.material3.adaptive.navigation.suite)
+    implementation(libs.material3.adaptive)
 
     // Room
     implementation(libs.room.runtime)

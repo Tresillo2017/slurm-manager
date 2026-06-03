@@ -1,30 +1,43 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
+
+    <!--
+      Adaptive icon foreground. Canvas 108×108, launcher clips to 66dp circle at center (54,54).
+      Safe zone: content within radius 33dp of center is always visible.
+
+      Body: 44×48dp, x=32–76, y=30–78, rx=10.
+      Corner distance from center: sqrt(22²+24²) ≈ 32.6dp — fits inside the 33dp safe radius.
+
+      Three job-slot cut-outs punch through the body via evenOdd fill.
+      Progress bars sit on top inside each slot, representing running/pending/queued jobs.
+    -->
+
+    <!-- Chassis body + slot cut-outs as a single compound evenOdd path -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+        android:fillType="evenOdd"
+        android:pathData="
+            M42,30 L66,30 Q76,30 76,40 L76,68 Q76,78 66,78 L42,78 Q32,78 32,68 L32,40 Q32,30 42,30 Z
+            M39,37 L69,37 Q72,37 72,40 L72,42 Q72,45 69,45 L39,45 Q36,45 36,42 L36,40 Q36,37 39,37 Z
+            M39,50 L69,50 Q72,50 72,53 L72,55 Q72,58 69,58 L39,58 Q36,58 36,55 L36,53 Q36,50 39,50 Z
+            M39,63 L69,63 Q72,63 72,66 L72,68 Q72,71 69,71 L39,71 Q36,71 36,68 L36,66 Q36,63 39,63 Z" />
+
+    <!-- Progress bar slot 1 — long (running job, ~72% fill) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,39 L60,39 Q62,39 62,41 Q62,43 60,43 L38,43 Q36,43 36,41 Q36,39 38,39 Z" />
+
+    <!-- Progress bar slot 2 — medium (pending, ~42% fill) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,52 L49,52 Q51,52 51,54 Q51,56 49,56 L38,56 Q36,56 36,54 Q36,52 38,52 Z" />
+
+    <!-- Progress bar slot 3 — short (queued, ~17% fill) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,65 L40,65 Q42,65 42,67 Q42,69 40,69 L38,69 Q36,69 36,67 Q36,65 38,65 Z" />
+
 </vector>

@@ -1,5 +1,5 @@
 [versions]
-agp = "8.9.1"
+agp = "9.2.1"
 coreKtx = "1.18.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -7,26 +7,26 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 kotlin = "2.2.10"
-ksp = "2.2.10-2.0.2"
-composeBom = "2026.02.01"
+ksp = "2.3.2"
+composeBom = "2026.05.01"
 hilt = "2.56.1"
-hiltNavigationCompose = "1.2.0"
-hiltWork = "1.2.0"
+hiltNavigationCompose = "1.3.0"
+hiltWork = "1.3.0"
 materialIconsExtended = "1.7.8"
-room = "2.7.1"
-workManager = "2.10.1"
-navigationCompose = "2.9.0"
-datastore = "1.1.4"
+room = "2.8.4"
+workManager = "2.11.2"
+navigationCompose = "2.9.8"
+datastore = "1.2.1"
 sshj = "0.38.0"
 bouncycastle = "1.78.1"
-securityCrypto = "1.1.0-alpha06"
+securityCrypto = "1.1.0"
 coroutines = "1.10.2"
 lifecycleViewmodelCompose = "2.10.0"
 kotlinxSerializationJson = "1.8.1"
 mockk = "1.14.2"
 turbine = "1.2.0"
 truth = "1.4.4"
-workManagerTesting = "2.10.1"
+workManagerTesting = "2.11.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -67,8 +67,11 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
-turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+turbine = { group = "app.cash.turbine", name = "turbine", version = "1.2.1" }
 truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
+material3-adaptive-navigation-suite = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite" }
+material3-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive" }
+ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
