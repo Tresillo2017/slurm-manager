@@ -1,5 +1,6 @@
 package com.tomasps.slurmmanager.presentation.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -42,6 +43,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     fun navigate(target: SettingsPage, isForward: Boolean = true) {
         forward.value = isForward
         page = target
+    }
+
+    BackHandler(enabled = page != SettingsPage.HUB) {
+        navigate(SettingsPage.HUB, isForward = false)
     }
 
     val enterSpec = spring<Float>(stiffness = Spring.StiffnessMediumLow)

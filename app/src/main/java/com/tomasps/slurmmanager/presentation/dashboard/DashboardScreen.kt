@@ -20,6 +20,8 @@ import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,10 +78,15 @@ fun DashboardScreen(
     ) { padding ->
         if (isExpanded) {
             Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+                val pullState = rememberPullToRefreshState()
                 PullToRefreshBox(
                     isRefreshing = state.isRefreshing,
                     onRefresh = { viewModel.refresh() },
-                    modifier = Modifier.weight(0.4f)
+                    state = pullState,
+                    modifier = Modifier.weight(0.4f),
+                    indicator = {
+                        PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing)
+                    }
                 ) {
                     DashboardListPane(
                         state = state,
@@ -112,10 +119,15 @@ fun DashboardScreen(
                 }
             }
         } else {
+            val pullState = rememberPullToRefreshState()
             PullToRefreshBox(
                 isRefreshing = state.isRefreshing,
                 onRefresh = { viewModel.refresh() },
-                modifier = Modifier.fillMaxSize().padding(padding)
+                state = pullState,
+                modifier = Modifier.fillMaxSize().padding(padding),
+                indicator = {
+                    PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing)
+                }
             ) {
                 DashboardListPane(
                     state = state,
@@ -142,6 +154,7 @@ private fun StatsStrip(stats: DashboardStats) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Max)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -194,16 +207,19 @@ private fun StatTile(
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = containerColor,
-        modifier = modifier
+        modifier = modifier.fillMaxHeight()
     ) {
         Column(
             modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.height(6.dp))
             Text(value, style = MaterialTheme.typography.titleLargeEmphasized, color = contentColor)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.8f))
+            Spacer(Modifier.height(4.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.8f),
+                maxLines = 1)
         }
     }
 }
