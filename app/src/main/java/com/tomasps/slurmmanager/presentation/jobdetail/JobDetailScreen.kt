@@ -65,10 +65,8 @@ fun JobDetailScreen(
         }
     }
 
-    val scrollBehavior = if (isInlinePane)
-        TopAppBarDefaults.pinnedScrollBehavior()
-    else
-        TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = if (isInlinePane) null
+        else TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
         contentWindowInsets = if (isInlinePane) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
@@ -91,7 +89,6 @@ fun JobDetailScreen(
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
-                    scrollBehavior = scrollBehavior
                 )
             } else {
                 LargeFlexibleTopAppBar(
@@ -135,11 +132,11 @@ fun JobDetailScreen(
                         }
                     },
                     actions = {},
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior!!
                 )
             }
         },
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = if (scrollBehavior != null) Modifier.nestedScroll(scrollBehavior.nestedScrollConnection) else Modifier,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
