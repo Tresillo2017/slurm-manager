@@ -46,7 +46,9 @@ fun ServerDetailScreen(
     serverId: String,
     onBack: () -> Unit,
     onJobClick: (jobId: String) -> Unit,
-    viewModel: ServerDetailViewModel = hiltViewModel()
+    viewModel: ServerDetailViewModel = hiltViewModel<ServerDetailViewModel, ServerDetailViewModel.Factory>(
+        creationCallback = { factory -> factory.create(serverId) }
+    )
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
