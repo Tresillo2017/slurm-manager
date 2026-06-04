@@ -90,5 +90,4 @@ jobs:
           packageName: com.tomasps.slurmmanager
           releaseFiles: app/build/outputs/bundle/release/*.aab
           track: internal
-          status: inProgress
-          rolloutPercentage: 100
+          status: completed
