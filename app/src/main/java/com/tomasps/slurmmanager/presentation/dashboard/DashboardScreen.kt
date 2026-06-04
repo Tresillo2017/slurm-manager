@@ -97,8 +97,7 @@ fun DashboardScreen(
                     topPadding = padding.calculateTopPadding(),
                 )
                 VerticalDivider()
-                // Right pane: fills edge-to-edge; its own TopAppBar handles insets
-                Box(Modifier.weight(0.6f).fillMaxHeight()) {
+                Box(Modifier.weight(0.6f).fillMaxHeight().padding(top = padding.calculateTopPadding())) {
                     if (selectedJob != null) {
                         com.tomasps.slurmmanager.presentation.jobdetail.JobDetailScreen(
                             jobId = selectedJob!!.jobId,
