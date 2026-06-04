@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="SLURM Manager icon" width="96"/>
+  <img src="docs/icon.png" alt="SLURM Manager icon" width="96"/>
 </p>
 
 # SLURM Manager
