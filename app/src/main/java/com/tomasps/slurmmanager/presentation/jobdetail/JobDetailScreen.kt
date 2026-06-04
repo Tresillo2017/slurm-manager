@@ -65,32 +65,111 @@ fun JobDetailScreen(
         }
     }
 
-    val scrollBehavior = if (isInlinePane) null
-        else TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-
-    Scaffold(
-        contentWindowInsets = if (isInlinePane) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
-        topBar = {
-            if (isInlinePane) {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(job?.name ?: "Job Detail", maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.titleMedium)
-                            job?.let { j ->
-                                Text("#${j.jobId} · ${j.partition}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+    // Inline pane: bypass Scaffold entirely to avoid double insets and padding
+    if (isInlinePane) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Surface(tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(job?.name ?: "Job Detail", maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.titleMedium)
+                        job?.let { j ->
+                            Text("#${j.jobId} · ${j.partition}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    job?.let { JobStateChip(it.state) }
+                }
+            }
+            HorizontalDivider()
+            if (job == null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        LoadingIndicator(modifier = Modifier.size(48.dp))
+                        Text("Loading job details…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 12.dp, bottom = 80.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        InlineJobDetailBody(job = job)
+                    }
+                    job.let { j ->
+                        FloatingActionButtonMenu(
+                            expanded = fabMenuExpanded,
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                            button = {
+                                ToggleFloatingActionButton(
+                                    checked = fabMenuExpanded,
+                                    onCheckedChange = { fabMenuExpanded = !fabMenuExpanded }
+                                ) {
+                                    val icon by remember { derivedStateOf {
+                                        if (checkedProgress > 0.5f) Icons.Default.Close else Icons.Default.MoreVert
+                                    }}
+                                    Icon(painter = rememberVectorPainter(icon), contentDescription = null,
+                                        modifier = Modifier.animateIcon({ checkedProgress }))
+                                }
+                            }
+                        ) {
+                            FloatingActionButtonMenuItem(
+                                onClick = { fabMenuExpanded = false; viewModel.toggleWatch() },
+                                icon = { Icon(if (j.watched) Icons.Default.NotificationsOff else Icons.Default.Notifications, null) },
+                                text = { Text(if (j.watched) "Unwatch" else "Watch") }
+                            )
+                            if (!j.state.isTerminal) {
+                                FloatingActionButtonMenuItem(
+                                    onClick = { fabMenuExpanded = false; showCancelDialog = true },
+                                    icon = { Icon(Icons.Default.Cancel, null) },
+                                    text = { Text("Cancel job") }
+                                )
+                                FloatingActionButtonMenuItem(
+                                    onClick = { fabMenuExpanded = false; viewModel.requeueJob() },
+                                    icon = { Icon(Icons.Default.Refresh, null) },
+                                    text = { Text("Requeue") }
+                                )
                             }
                         }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                )
-            } else {
+                    }
+                }
+            }
+        }
+        if (showCancelDialog) {
+            AlertDialog(
+                onDismissRequest = { showCancelDialog = false },
+                icon = { Icon(Icons.Default.Cancel, null) },
+                title = { Text("Cancel job?") },
+                text = { Text("This will send scancel to job #${job?.jobId} (${job?.name}). The job will be terminated and cannot be resumed.", style = MaterialTheme.typography.bodyMedium) },
+                confirmButton = {
+                    Button(onClick = { viewModel.cancelJob(); showCancelDialog = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError)) { Text("Cancel Job") }
+                },
+                dismissButton = { TextButton(onClick = { showCancelDialog = false }) { Text("Keep Running") } }
+            )
+        }
+        return
+    }
+
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    Scaffold(
+        topBar = {
                 LargeFlexibleTopAppBar(
                     title = {
                         Text(job?.name ?: "Job Detail", maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -132,11 +211,10 @@ fun JobDetailScreen(
                         }
                     },
                     actions = {},
-                    scrollBehavior = scrollBehavior!!
+                    scrollBehavior = scrollBehavior
                 )
-            }
         },
-        modifier = if (scrollBehavior != null) Modifier.nestedScroll(scrollBehavior.nestedScrollConnection) else Modifier,
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -424,6 +502,138 @@ fun JobDetailScreen(
                 TextButton(onClick = { showCancelDialog = false }) { Text("Keep Running") }
             }
         )
+    }
+}
+
+// ─── Shared content body (inline pane + full-screen) ────────────────────────
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun InlineJobDetailBody(job: Job) {
+    // Hero strip
+    val (heroBg, heroContent) = when {
+        job.state.isActive -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        job.state == JobState.COMPLETED -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        job.state.isTerminal -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        job.state == JobState.PENDING -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.onSurface
+    }
+    Surface(color = heroBg, shape = MaterialTheme.shapes.extraLarge, modifier = Modifier.fillMaxWidth()) {
+        Row(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val stateIcon = when (job.state) {
+                        JobState.RUNNING, JobState.COMPLETING -> Icons.Default.PlayArrow
+                        JobState.PENDING -> Icons.Default.HourglassEmpty
+                        JobState.COMPLETED -> Icons.Default.CheckCircle
+                        JobState.FAILED -> Icons.Default.Error
+                        JobState.CANCELLED -> Icons.Default.Cancel
+                        JobState.SUSPENDED -> Icons.Default.Pause
+                        else -> Icons.Default.Info
+                    }
+                    Icon(stateIcon, contentDescription = null, tint = heroContent, modifier = Modifier.size(20.dp))
+                    Text(job.state.name.lowercase().replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.titleMedium, color = heroContent)
+                }
+                if (job.state.isActive && job.startTime != null) {
+                    val elapsed = System.currentTimeMillis() - job.startTime
+                    Text(formatDuration(elapsed), style = MaterialTheme.typography.displaySmallEmphasized, color = heroContent)
+                    if (job.nodelist.isNotBlank()) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Default.Dns, contentDescription = null, tint = heroContent.copy(alpha = 0.7f), modifier = Modifier.size(14.dp))
+                            Text(job.nodelist, style = MaterialTheme.typography.bodySmall, color = heroContent.copy(alpha = 0.7f))
+                        }
+                    }
+                }
+                if (job.state == JobState.PENDING) {
+                    if (job.queuePosition != null) Text("Position ${job.queuePosition} in queue",
+                        style = MaterialTheme.typography.titleLargeEmphasized, color = heroContent)
+                    job.startTime?.let { Text("Est. start ${formatTimestamp(it)}", style = MaterialTheme.typography.bodySmall, color = heroContent.copy(alpha = 0.7f)) }
+                }
+                if (job.state.isTerminal && job.exitCode != null && job.exitCode != 0)
+                    Text("Exit code ${job.exitCode}", style = MaterialTheme.typography.bodyMedium, color = heroContent.copy(alpha = 0.8f))
+            }
+            if (job.state.isActive) {
+                Spacer(Modifier.width(16.dp))
+                ContainedLoadingIndicator(modifier = Modifier.size(56.dp), containerColor = heroBg, indicatorColor = heroContent)
+            }
+        }
+    }
+
+    // Resources
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader("Resources", Icons.Default.Memory)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ResourceTile("Nodes", "${job.nodes}", Icons.Default.Dns, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer, Modifier.weight(1f))
+                ResourceTile("CPUs", "${job.cpus}", Icons.Default.Memory, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer, Modifier.weight(1f))
+                ResourceTile("Memory", formatMemory(job.memoryMb), Icons.Default.Storage, MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ResourceTile("Priority", "${job.priority}", Icons.Default.PriorityHigh, MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.weight(1f))
+                ResourceTile("Partition", job.partition, Icons.Default.Category, MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurfaceVariant, Modifier.weight(1f))
+                ResourceTile("Exit code", "${job.exitCode ?: "—"}", Icons.Default.Code,
+                    if (job.exitCode != null && job.exitCode != 0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    if (job.exitCode != null && job.exitCode != 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    Modifier.weight(1f))
+            }
+        }
+    }
+
+    // Timeline
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader("Timeline", Icons.Default.Schedule)
+            Column {
+                TimelineEvent(Icons.Default.Send, "Submitted", job.submitTime,
+                    MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurfaceVariant,
+                    isFirst = true, isLast = job.startTime == null,
+                    connectorDurationMs = job.startTime?.let { it - job.submitTime })
+                job.startTime?.let { startTime ->
+                    TimelineEvent(Icons.Default.PlayArrow, "Started", startTime,
+                        MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer,
+                        isFirst = false, isLast = !(job.state.isTerminal && job.endTime != null),
+                        connectorDurationMs = job.endTime?.let { it - startTime })
+                }
+                if (job.state.isTerminal && job.endTime != null) {
+                    val (nc, ncc) = if (job.state == JobState.COMPLETED)
+                        MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+                    else MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+                    TimelineEvent(
+                        if (job.state == JobState.COMPLETED) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                        when (job.state) { JobState.COMPLETED -> "Completed"; JobState.FAILED -> "Failed"; JobState.CANCELLED -> "Cancelled"; else -> "Ended" },
+                        job.endTime, nc, ncc, isFirst = false, isLast = true, connectorDurationMs = null)
+                }
+            }
+            if (job.startTime != null) {
+                HorizontalDivider()
+                val endMs = if (job.state.isTerminal) job.endTime ?: System.currentTimeMillis() else System.currentTimeMillis()
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Total runtime", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Surface(shape = MaterialTheme.shapes.extraSmall, color = MaterialTheme.colorScheme.primaryContainer) {
+                        Text(formatDuration(endMs - job.startTime), style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    // Work directory
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader("Work Directory", Icons.Default.Folder)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+                Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(40.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Text(job.workDir, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            }
+        }
     }
 }
 
