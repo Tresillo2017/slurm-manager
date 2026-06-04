@@ -45,7 +45,9 @@ fun JobDetailScreen(
     jobId: String,
     serverId: String,
     onBack: () -> Unit,
-    viewModel: JobDetailViewModel = hiltViewModel()
+    viewModel: JobDetailViewModel = hiltViewModel<JobDetailViewModel, JobDetailViewModel.Factory>(
+        creationCallback = { factory -> factory.create(jobId, serverId) }
+    )
 ) {
     val state by viewModel.uiState.collectAsState()
     val job = state.job

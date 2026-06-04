@@ -84,7 +84,8 @@ fun DashboardScreen(
                 state = pullState,
                 modifier = Modifier.fillMaxSize().padding(padding),
                 indicator = {
-                    PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing)
+                    PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing,
+                        modifier = Modifier.align(Alignment.TopCenter))
                 }
             ) {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -127,7 +128,8 @@ fun DashboardScreen(
                 state = pullState,
                 modifier = Modifier.fillMaxSize().padding(padding),
                 indicator = {
-                    PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing)
+                    PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing,
+                        modifier = Modifier.align(Alignment.TopCenter))
                 }
             ) {
                 DashboardListPane(
