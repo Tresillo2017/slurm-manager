@@ -2,6 +2,9 @@ package com.tomasps.slurmmanager.presentation.settings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.window.core.layout.WindowWidthSizeClass
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -23,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlin.math.roundToInt
@@ -84,13 +88,38 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
 
 // ─── Hub ────────────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun SettingsHub(
     state: SettingsUiState,
     onNavigate: (SettingsPage) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val isCompact = windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
+    val isExpanded = windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED
+
+    val navCards = listOf(
+        Triple(Icons.Default.Notifications, MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
+            Triple("Notifications", buildString {
+                val enabled = listOfNotNull("Jobs".takeIf { state.jobStateNotifs }, "Alerts".takeIf { state.alertNotifs }, "Cluster".takeIf { state.clusterNotifs })
+                append(if (enabled.isEmpty()) "All disabled" else enabled.joinToString(" · "))
+            }, SettingsPage.NOTIFICATIONS)),
+        Triple(Icons.Default.Palette, MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
+            Triple("Appearance", buildString {
+                append(state.darkTheme.name.lowercase().replaceFirstChar { it.uppercase() })
+                if (state.dynamicColor) append(" · Material You")
+            }, SettingsPage.APPEARANCE)),
+        Triple(Icons.Default.Sync, MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
+            Triple("Polling & Sync", buildString {
+                append("Every ${state.defaultPollingInterval}m")
+                if (state.batterySaver) append(" · Battery saver on")
+                if (!state.backgroundSync) append(" · Background off")
+            }, SettingsPage.POLLING)),
+        Triple(Icons.Default.Info, MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant,
+            Triple("About", "SLURM Manager v1.0", SettingsPage.ABOUT)),
+    )
+
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
@@ -101,67 +130,40 @@ private fun SettingsHub(
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { padding ->
-        LazyColumn(
-            contentPadding = PaddingValues(
-                start = 16.dp, end = 16.dp,
-                top = padding.calculateTopPadding() + 8.dp,
-                bottom = padding.calculateBottomPadding() + 16.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                SettingsNavCard(
-                    icon = Icons.Default.Notifications,
-                    iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    title = "Notifications",
-                    subtitle = buildString {
-                        val enabled = listOfNotNull(
-                            "Jobs".takeIf { state.jobStateNotifs },
-                            "Alerts".takeIf { state.alertNotifs },
-                            "Cluster".takeIf { state.clusterNotifs }
-                        )
-                        append(if (enabled.isEmpty()) "All disabled" else enabled.joinToString(" · "))
-                    },
-                    onClick = { onNavigate(SettingsPage.NOTIFICATIONS) }
-                )
+        val contentPadding = PaddingValues(
+            start = 16.dp, end = 16.dp,
+            top = padding.calculateTopPadding() + 8.dp,
+            bottom = padding.calculateBottomPadding() + 16.dp
+        )
+        if (isCompact) {
+            LazyColumn(contentPadding = contentPadding, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                navCards.forEach { (icon, colors, info) ->
+                    item {
+                        SettingsNavCard(icon = icon, iconContainerColor = colors.first,
+                            iconContentColor = colors.second, title = info.first,
+                            subtitle = info.second, onClick = { onNavigate(info.third) })
+                    }
+                }
             }
-            item {
-                SettingsNavCard(
-                    icon = Icons.Default.Palette,
-                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    title = "Appearance",
-                    subtitle = buildString {
-                        append(state.darkTheme.name.lowercase().replaceFirstChar { it.uppercase() })
-                        if (state.dynamicColor) append(" · Material You")
-                    },
-                    onClick = { onNavigate(SettingsPage.APPEARANCE) }
-                )
-            }
-            item {
-                SettingsNavCard(
-                    icon = Icons.Default.Sync,
-                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    title = "Polling & Sync",
-                    subtitle = buildString {
-                        append("Every ${state.defaultPollingInterval}m")
-                        if (state.batterySaver) append(" · Battery saver on")
-                        if (!state.backgroundSync) append(" · Background off")
-                    },
-                    onClick = { onNavigate(SettingsPage.POLLING) }
-                )
-            }
-            item {
-                SettingsNavCard(
-                    icon = Icons.Default.Info,
-                    iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    title = "About",
-                    subtitle = "SLURM Manager v1.0",
-                    onClick = { onNavigate(SettingsPage.ABOUT) }
-                )
+        } else {
+            // Medium/expanded: 2-column grid, optionally centered on very wide screens
+            val maxWidth = if (isExpanded) 840.dp else Dp.Unspecified
+            Box(modifier = Modifier.fillMaxSize().padding(contentPadding), contentAlignment = Alignment.TopCenter) {
+                val gridModifier = if (isExpanded) Modifier.widthIn(max = maxWidth) else Modifier.fillMaxWidth()
+                androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                    columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
+                    modifier = gridModifier,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    navCards.forEach { (icon, colors, info) ->
+                        item {
+                            SettingsNavCard(icon = icon, iconContainerColor = colors.first,
+                                iconContentColor = colors.second, title = info.first,
+                                subtitle = info.second, onClick = { onNavigate(info.third) })
+                        }
+                    }
+                }
             }
         }
     }

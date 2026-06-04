@@ -2,10 +2,15 @@ package com.tomasps.slurmmanager.presentation.servers
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,10 +21,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.tomasps.slurmmanager.domain.model.Server
 import com.tomasps.slurmmanager.domain.model.ServerStatus
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun ServersScreen(
     onServerClick: (serverId: String) -> Unit,
@@ -32,6 +38,8 @@ fun ServersScreen(
     var serverToDelete by remember { mutableStateOf<Server?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val isCompact = windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -100,50 +108,40 @@ fun ServersScreen(
                     }
                 }
             }
-        } else {
+        } else if (isCompact) {
             LazyColumn(
                 contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
+                    start = 16.dp, end = 16.dp,
                     top = padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 80.dp  // FAB clearance
+                    bottom = padding.calculateBottomPadding() + 80.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(servers, key = { it.server.id.toString() }) { item ->
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { value ->
-                            if (value == SwipeToDismissBoxValue.EndToStart) serverToDelete = item.server
-                            false
-                        }
+                    SwipeToDismissServerCard(
+                        item = item,
+                        onDelete = { serverToDelete = item.server },
+                        onClick = { onServerClick(item.server.id.toString()) }
                     )
-                    SwipeToDismissBox(
-                        modifier = Modifier.animateItem(),
-                        state = dismissState,
-                        enableDismissFromStartToEnd = false,
-                        backgroundContent = {
-                            Box(
-                                modifier = Modifier.fillMaxSize().padding(4.dp),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.medium,
-                                    color = MaterialTheme.colorScheme.errorContainer,
-                                    modifier = Modifier.fillMaxHeight().aspectRatio(1f)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = "Delete",
-                                            tint = MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    ) {
-                        ServerCard(item = item, onClick = { onServerClick(item.server.id.toString()) })
-                    }
+                }
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(
+                    start = 16.dp, end = 16.dp,
+                    top = padding.calculateTopPadding() + 8.dp,
+                    bottom = padding.calculateBottomPadding() + 80.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(servers, key = { it.server.id.toString() }) { item ->
+                    SwipeToDismissServerCard(
+                        item = item,
+                        onDelete = { serverToDelete = item.server },
+                        onClick = { onServerClick(item.server.id.toString()) }
+                    )
                 }
             }
         }
@@ -173,6 +171,43 @@ fun ServersScreen(
                 TextButton(onClick = { serverToDelete = null }) { Text("Cancel") }
             }
         )
+    }
+}
+
+@Composable
+private fun SwipeToDismissServerCard(
+    item: ServerListItem,
+    onDelete: () -> Unit,
+    onClick: () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) onDelete()
+            false
+        }
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(4.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.fillMaxHeight().aspectRatio(1f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.onErrorContainer)
+                    }
+                }
+            }
+        }
+    ) {
+        ServerCard(item = item, onClick = onClick)
     }
 }
 
