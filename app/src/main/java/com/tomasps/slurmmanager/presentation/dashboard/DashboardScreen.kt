@@ -77,23 +77,23 @@ fun DashboardScreen(
         }
     ) { padding ->
         if (isExpanded) {
-            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
-                val pullState = rememberPullToRefreshState()
-                PullToRefreshBox(
-                    isRefreshing = state.isRefreshing,
-                    onRefresh = { viewModel.refresh() },
-                    state = pullState,
-                    modifier = Modifier.weight(0.4f),
-                    indicator = {
-                        PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing)
-                    }
-                ) {
-                    DashboardListPane(
-                        state = state,
-                        viewModel = viewModel,
-                        onJobClick = { job -> selectedJob = job },
-                    )
+            val pullState = rememberPullToRefreshState()
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = { viewModel.refresh() },
+                state = pullState,
+                modifier = Modifier.fillMaxSize().padding(padding),
+                indicator = {
+                    PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing)
                 }
+            ) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                DashboardListPane(
+                    state = state,
+                    viewModel = viewModel,
+                    onJobClick = { job -> selectedJob = job },
+                    modifier = Modifier.weight(0.4f),
+                )
                 VerticalDivider()
                 Box(Modifier.weight(0.6f).fillMaxHeight()) {
                     if (selectedJob != null) {
@@ -118,6 +118,7 @@ fun DashboardScreen(
                     }
                 }
             }
+            } // PullToRefreshBox
         } else {
             val pullState = rememberPullToRefreshState()
             PullToRefreshBox(
