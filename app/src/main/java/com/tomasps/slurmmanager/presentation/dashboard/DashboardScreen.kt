@@ -82,10 +82,10 @@ fun DashboardScreen(
                 isRefreshing = state.isRefreshing,
                 onRefresh = { viewModel.refresh() },
                 state = pullState,
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 indicator = {
                     PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing,
-                        modifier = Modifier.align(Alignment.TopCenter))
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = padding.calculateTopPadding()))
                 }
             ) {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -94,8 +94,10 @@ fun DashboardScreen(
                     viewModel = viewModel,
                     onJobClick = { job -> selectedJob = job },
                     modifier = Modifier.weight(0.4f),
+                    topPadding = padding.calculateTopPadding(),
                 )
                 VerticalDivider()
+                // Right pane: fills edge-to-edge; its own TopAppBar handles insets
                 Box(Modifier.weight(0.6f).fillMaxHeight()) {
                     if (selectedJob != null) {
                         com.tomasps.slurmmanager.presentation.jobdetail.JobDetailScreen(
@@ -237,6 +239,7 @@ private fun DashboardListPane(
     viewModel: DashboardViewModel,
     onJobClick: (Job) -> Unit,
     modifier: Modifier = Modifier,
+    topPadding: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     val unreachable = state.servers.filter {
         it.status == ServerStatus.UNREACHABLE || it.status == ServerStatus.OFFLINE
@@ -251,8 +254,7 @@ private fun DashboardListPane(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        // 160dp clears the floating nav bar (~64dp) + FAB (~56dp) + gaps
-        contentPadding = PaddingValues(bottom = 160.dp),
+        contentPadding = PaddingValues(top = topPadding, bottom = 160.dp),
     ) {
         // Unreachable banner
         if (unreachable.isNotEmpty()) {
