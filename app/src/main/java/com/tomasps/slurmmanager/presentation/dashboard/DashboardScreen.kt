@@ -101,7 +101,8 @@ fun DashboardScreen(
                         com.tomasps.slurmmanager.presentation.jobdetail.JobDetailScreen(
                             jobId = selectedJob!!.jobId,
                             serverId = selectedJob!!.serverId.toString(),
-                            onBack = { selectedJob = null }
+                            onBack = { selectedJob = null },
+                            isInlinePane = true
                         )
                     } else {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

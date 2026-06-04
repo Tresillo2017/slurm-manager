@@ -45,6 +45,7 @@ fun JobDetailScreen(
     jobId: String,
     serverId: String,
     onBack: () -> Unit,
+    isInlinePane: Boolean = false,
     viewModel: JobDetailViewModel = hiltViewModel<JobDetailViewModel, JobDetailViewModel.Factory>(
         creationCallback = { factory -> factory.create(jobId, serverId) }
     )
@@ -67,6 +68,7 @@ fun JobDetailScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
+        contentWindowInsets = if (isInlinePane) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
