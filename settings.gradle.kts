@@ -10,13 +10,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.id == "org.jetbrains.kotlin.android") {
-                useVersion("2.2.10")
-            }
-        }
-    }
+
 }
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
