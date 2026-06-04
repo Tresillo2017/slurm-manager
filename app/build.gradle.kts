@@ -1,4 +1,6 @@
 import java.util.Properties
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 val versionProps = Properties().apply {
     load(rootProject.file("version.properties").inputStream())
@@ -6,7 +8,9 @@ val versionProps = Properties().apply {
 val vMajor = versionProps["VERSION_MAJOR"].toString().toInt()
 val vMinor = versionProps["VERSION_MINOR"].toString().toInt()
 val vPatch = versionProps["VERSION_PATCH"].toString().toInt()
-val appVersionCode = vMajor * 10000 + vMinor * 100 + vPatch
+// yyyyMMddHH — fits in a 32-bit signed int (max ~year 2100)
+val appVersionCode = versionProps["VERSION_BUILD"]?.toString()?.toIntOrNull()
+    ?: LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHH")).toInt()
 val appVersionName = "$vMajor.$vMinor.$vPatch"
 
 plugins {
