@@ -55,49 +55,58 @@ fun DashboardScreen(
             viewModel.clearError()
         }
     }
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val isExpanded = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED
     var selectedJob by remember { mutableStateOf<Job?>(null) }
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        topBar = {
-            val statsSubtitle = buildString {
-                val s = state.stats
-                if (s.running > 0) append("${s.running} running")
-                if (s.pending > 0) { if (isNotEmpty()) append(" · "); append("${s.pending} pending") }
-                if (s.failed > 0) { if (isNotEmpty()) append(" · "); append("${s.failed} failed") }
-            }
-            LargeFlexibleTopAppBar(
-                title = { Text("Dashboard") },
-                subtitle = if (statsSubtitle.isNotEmpty()) ({ Text(statsSubtitle) }) else null,
-                scrollBehavior = scrollBehavior
-            )
-        }
-    ) { padding ->
-        if (isExpanded) {
-            val pullState = rememberPullToRefreshState()
-            PullToRefreshBox(
-                isRefreshing = state.isRefreshing,
-                onRefresh = { viewModel.refresh() },
-                state = pullState,
-                modifier = Modifier.fillMaxSize(),
-                indicator = {
-                    PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = padding.calculateTopPadding()))
+    if (isExpanded) {
+        // Expanded: outer shell has no topBar — each pane manages its own
+        Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { padding ->
+            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+                // Left pane: has its own app bar + pull-to-refresh
+                val leftScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+                val pullState = rememberPullToRefreshState()
+                Scaffold(
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .nestedScroll(leftScrollBehavior.nestedScrollConnection),
+                    topBar = {
+                        val statsSubtitle = buildString {
+                            val s = state.stats
+                            if (s.running > 0) append("${s.running} running")
+                            if (s.pending > 0) { if (isNotEmpty()) append(" · "); append("${s.pending} pending") }
+                            if (s.failed > 0) { if (isNotEmpty()) append(" · "); append("${s.failed} failed") }
+                        }
+                        LargeFlexibleTopAppBar(
+                            title = { Text("Dashboard") },
+                            subtitle = if (statsSubtitle.isNotEmpty()) ({ Text(statsSubtitle) }) else null,
+                            scrollBehavior = leftScrollBehavior
+                        )
+                    }
+                ) { leftPadding ->
+                    PullToRefreshBox(
+                        isRefreshing = state.isRefreshing,
+                        onRefresh = { viewModel.refresh() },
+                        state = pullState,
+                        modifier = Modifier.fillMaxSize(),
+                        indicator = {
+                            PullToRefreshDefaults.LoadingIndicator(
+                                state = pullState, isRefreshing = state.isRefreshing,
+                                modifier = Modifier.align(Alignment.TopCenter)
+                                    .padding(top = leftPadding.calculateTopPadding())
+                            )
+                        }
+                    ) {
+                        DashboardListPane(
+                            state = state,
+                            viewModel = viewModel,
+                            onJobClick = { job -> selectedJob = job },
+                            topPadding = leftPadding.calculateTopPadding(),
+                        )
+                    }
                 }
-            ) {
-            Row(modifier = Modifier.fillMaxSize()) {
-                DashboardListPane(
-                    state = state,
-                    viewModel = viewModel,
-                    onJobClick = { job -> selectedJob = job },
-                    modifier = Modifier.weight(0.4f),
-                    topPadding = padding.calculateTopPadding(),
-                )
                 VerticalDivider()
-                Box(Modifier.weight(0.6f).fillMaxHeight().padding(top = padding.calculateTopPadding())) {
+                // Right pane: fills full height, no top bar of its own
+                Box(Modifier.weight(0.6f).fillMaxHeight()) {
                     if (selectedJob != null) {
                         com.tomasps.slurmmanager.presentation.jobdetail.JobDetailScreen(
                             jobId = selectedJob!!.jobId,
@@ -121,25 +130,48 @@ fun DashboardScreen(
                     }
                 }
             }
-            } // PullToRefreshBox
-        } else {
-            val pullState = rememberPullToRefreshState()
-            PullToRefreshBox(
-                isRefreshing = state.isRefreshing,
-                onRefresh = { viewModel.refresh() },
-                state = pullState,
-                modifier = Modifier.fillMaxSize().padding(padding),
-                indicator = {
-                    PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing,
-                        modifier = Modifier.align(Alignment.TopCenter))
-                }
-            ) {
-                DashboardListPane(
-                    state = state,
-                    viewModel = viewModel,
-                    onJobClick = { job -> onJobClick(job.jobId, job.serverId.toString()) },
-                )
+        }
+        if (showSubmitJob) {
+            SubmitJobSheet(serverId = state.selectedServerId, servers = state.servers, onDismiss = onDismissSubmitJob)
+        }
+        return
+    }
+
+    // Compact: single-pane with shared top bar
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        topBar = {
+            val statsSubtitle = buildString {
+                val s = state.stats
+                if (s.running > 0) append("${s.running} running")
+                if (s.pending > 0) { if (isNotEmpty()) append(" · "); append("${s.pending} pending") }
+                if (s.failed > 0) { if (isNotEmpty()) append(" · "); append("${s.failed} failed") }
             }
+            LargeFlexibleTopAppBar(
+                title = { Text("Dashboard") },
+                subtitle = if (statsSubtitle.isNotEmpty()) ({ Text(statsSubtitle) }) else null,
+                scrollBehavior = scrollBehavior
+            )
+        }
+    ) { padding ->
+        val pullState = rememberPullToRefreshState()
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            state = pullState,
+            modifier = Modifier.fillMaxSize().padding(padding),
+            indicator = {
+                PullToRefreshDefaults.LoadingIndicator(state = pullState, isRefreshing = state.isRefreshing,
+                    modifier = Modifier.align(Alignment.TopCenter))
+            }
+        ) {
+            DashboardListPane(
+                state = state,
+                viewModel = viewModel,
+                onJobClick = { job -> onJobClick(job.jobId, job.serverId.toString()) },
+            )
         }
     }
 
