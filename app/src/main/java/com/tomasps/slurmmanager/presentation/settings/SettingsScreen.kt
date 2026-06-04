@@ -1,7 +1,10 @@
 package com.tomasps.slurmmanager.presentation.settings
 
+import androidx.activity.BackEventCompat
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.window.core.layout.WindowWidthSizeClass
@@ -78,8 +81,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
         }
     } else {
-        BackHandler(enabled = page != SettingsPage.HUB) {
-            navigate(SettingsPage.HUB, isForward = false)
+        val swipeOffset = remember { Animatable(0f) }
+        PredictiveBackHandler(enabled = page != SettingsPage.HUB) { flow ->
+            try {
+                flow.collect { event: BackEventCompat ->
+                    swipeOffset.snapTo(event.progress)
+                }
+                swipeOffset.snapTo(0f)
+                navigate(SettingsPage.HUB, isForward = false)
+            } catch (_: Exception) {
+                swipeOffset.animateTo(0f, spring(stiffness = Spring.StiffnessMediumLow))
+            }
         }
 
         val enterSpec = spring<Float>(stiffness = Spring.StiffnessMediumLow)

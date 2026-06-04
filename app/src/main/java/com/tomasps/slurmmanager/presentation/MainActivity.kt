@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -212,11 +213,20 @@ private fun FloatingNavItem(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val scale by animateFloatAsState(
+    val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.88f else 1f,
         animationSpec = spring(stiffness = Spring.StiffnessHigh, dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "nav_scale_${item.label}"
     )
+
+    // Icon bounce when this tab becomes selected
+    val iconScale = remember { Animatable(1f) }
+    LaunchedEffect(selected) {
+        if (selected) {
+            iconScale.animateTo(1.3f, spring(stiffness = Spring.StiffnessHigh, dampingRatio = Spring.DampingRatioLowBouncy))
+            iconScale.animateTo(1f, spring(stiffness = Spring.StiffnessMedium))
+        }
+    }
 
     val bgColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.secondaryContainer
@@ -237,7 +247,7 @@ private fun FloatingNavItem(
         color = bgColor,
         contentColor = contentColor,
         interactionSource = interactionSource,
-        modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale }
+        modifier = Modifier.graphicsLayer { scaleX = pressScale; scaleY = pressScale }
     ) {
         AnimatedContent(
             targetState = selected,
@@ -253,15 +263,14 @@ private fun FloatingNavItem(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(item.icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(item.icon, contentDescription = null,
+                        modifier = Modifier.size(20.dp).graphicsLayer { scaleX = iconScale.value; scaleY = iconScale.value })
                     Text(item.label, style = MaterialTheme.typography.labelLargeEmphasized)
                 }
             } else {
-                Box(
-                    modifier = Modifier.size(48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(20.dp))
+                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    Icon(item.icon, contentDescription = item.label,
+                        modifier = Modifier.size(20.dp).graphicsLayer { scaleX = iconScale.value; scaleY = iconScale.value })
                 }
             }
         }

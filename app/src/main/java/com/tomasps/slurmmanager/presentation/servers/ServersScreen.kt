@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.activity.BackEventCompat
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -37,6 +39,14 @@ fun ServersScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val isExpanded = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT
     var selectedServerId by remember { mutableStateOf<String?>(null) }
+
+    // Predictive back clears the detail pane on expanded, no-op on compact (nav graph handles it)
+    PredictiveBackHandler(enabled = isExpanded && selectedServerId != null) { flow ->
+        try {
+            flow.collect {}
+            selectedServerId = null
+        } catch (_: Exception) { }
+    }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
