@@ -36,25 +36,111 @@ fun ServersScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     var serverToDelete by remember { mutableStateOf<Server?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val isExpanded = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT
     var selectedServerId by remember { mutableStateOf<String?>(null) }
 
-    // Predictive back clears the detail pane on expanded, no-op on compact (nav graph handles it)
     PredictiveBackHandler(enabled = isExpanded && selectedServerId != null) { flow ->
-        try {
-            flow.collect {}
-            selectedServerId = null
-        } catch (_: Exception) { }
+        try { flow.collect {}; selectedServerId = null } catch (_: Exception) { }
     }
 
     LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearError()
-        }
+        errorMessage?.let { snackbarHostState.showSnackbar(it); viewModel.clearError() }
     }
 
+    if (isExpanded) {
+        // Left pane owns the Scaffold+topBar; right pane fills full height
+        Row(modifier = Modifier.fillMaxSize()) {
+            val leftScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+            Scaffold(
+                modifier = Modifier.weight(0.4f).nestedScroll(leftScrollBehavior.nestedScrollConnection),
+                snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+                topBar = {
+                    LargeFlexibleTopAppBar(
+                        title = { Text("Servers") },
+                        subtitle = if (servers.isNotEmpty()) ({
+                            val online = servers.count { it.server.status == ServerStatus.ONLINE }
+                            val unreachable = servers.count { it.server.status == ServerStatus.UNREACHABLE || it.server.status == ServerStatus.OFFLINE }
+                            Text(buildString {
+                                append("${servers.size} cluster${if (servers.size != 1) "s" else ""}")
+                                if (online > 0) append(" · $online online")
+                                if (unreachable > 0) append(" · $unreachable unreachable")
+                            })
+                        }) else null,
+                        scrollBehavior = leftScrollBehavior
+                    )
+                }
+            ) { leftPadding ->
+                if (servers.isEmpty()) {
+                    Box(Modifier.fillMaxSize().padding(leftPadding), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.padding(32.dp)) {
+                            Surface(shape = MaterialTheme.shapes.extraLarge,
+                                color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(88.dp)) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Storage, contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(44.dp))
+                                }
+                            }
+                            Text("No clusters yet", style = MaterialTheme.typography.headlineSmallEmphasized, textAlign = TextAlign.Center)
+                            Text("Connect to your first HPC cluster via SSH to start monitoring jobs.",
+                                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                            Button(onClick = onAddServer) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Add your first cluster")
+                            }
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp,
+                            top = leftPadding.calculateTopPadding() + 8.dp,
+                            bottom = leftPadding.calculateBottomPadding() + 80.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(servers, key = { it.server.id.toString() }) { item ->
+                            SwipeToDismissServerCard(item = item,
+                                onDelete = { serverToDelete = item.server },
+                                onClick = { selectedServerId = item.server.id.toString() })
+                        }
+                    }
+                }
+            }
+            VerticalDivider()
+            Box(modifier = Modifier.weight(0.6f).fillMaxHeight()) {
+                if (selectedServerId != null) {
+                    com.tomasps.slurmmanager.presentation.serverdetail.ServerDetailScreen(
+                        serverId = selectedServerId!!,
+                        onBack = { selectedServerId = null },
+                        onJobClick = { onServerClick(selectedServerId!!) }
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.TouchApp, contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
+                            Text("Select a server to see details",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            }
+        }
+        serverToDelete?.let { server ->
+            AlertDialog(onDismissRequest = { serverToDelete = null },
+                icon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                title = { Text("Remove server?") },
+                text = { Text("\"${server.name}\" (${server.hostname}) will be removed and polling will stop. This cannot be undone.", style = MaterialTheme.typography.bodyMedium) },
+                confirmButton = { Button(onClick = { viewModel.deleteServer(server); serverToDelete = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)) { Text("Remove") } },
+                dismissButton = { TextButton(onClick = { serverToDelete = null }) { Text("Cancel") } })
+        }
+        return
+    }
+
+    // Compact
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -62,9 +148,7 @@ fun ServersScreen(
                 title = { Text("Servers") },
                 subtitle = if (servers.isNotEmpty()) ({
                     val online = servers.count { it.server.status == ServerStatus.ONLINE }
-                    val unreachable = servers.count {
-                        it.server.status == ServerStatus.UNREACHABLE || it.server.status == ServerStatus.OFFLINE
-                    }
+                    val unreachable = servers.count { it.server.status == ServerStatus.UNREACHABLE || it.server.status == ServerStatus.OFFLINE }
                     Text(buildString {
                         append("${servers.size} cluster${if (servers.size != 1) "s" else ""}")
                         if (online > 0) append(" · $online online")
@@ -78,101 +162,22 @@ fun ServersScreen(
     ) { padding ->
         if (servers.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.padding(32.dp)
-                ) {
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(88.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Storage,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(44.dp)
-                            )
-                        }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(32.dp)) {
+                    Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(88.dp)) {
+                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(44.dp)) }
                     }
-                    Text(
-                        "No clusters yet",
-                        style = MaterialTheme.typography.headlineSmallEmphasized,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        "Connect to your first HPC cluster via SSH to start monitoring jobs.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Button(onClick = onAddServer) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Add your first cluster")
-                    }
-                }
-            }
-        } else if (isExpanded) {
-            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
-                // List pane
-                LazyColumn(
-                    modifier = Modifier.weight(0.4f),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(servers, key = { it.server.id.toString() }) { item ->
-                        SwipeToDismissServerCard(
-                            item = item,
-                            onDelete = { serverToDelete = item.server },
-                            onClick = { selectedServerId = item.server.id.toString() }
-                        )
-                    }
-                }
-                VerticalDivider()
-                // Detail pane
-                Box(modifier = Modifier.weight(0.6f).fillMaxHeight()) {
-                    if (selectedServerId != null) {
-                        com.tomasps.slurmmanager.presentation.serverdetail.ServerDetailScreen(
-                            serverId = selectedServerId!!,
-                            onBack = { selectedServerId = null },
-                            onJobClick = { jobId ->
-                                onServerClick(selectedServerId!!) // navigate via nav graph on compact
-                            }
-                        )
-                    } else {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(Icons.Default.TouchApp, contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
-                                Text("Select a server to see details",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.bodyLarge)
-                            }
-                        }
-                    }
+                    Text("No clusters yet", style = MaterialTheme.typography.headlineSmallEmphasized, textAlign = TextAlign.Center)
+                    Text("Connect to your first HPC cluster via SSH to start monitoring jobs.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                    Button(onClick = onAddServer) { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Add your first cluster") }
                 }
             }
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(
-                    start = 16.dp, end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 80.dp
-                ),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 80.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(servers, key = { it.server.id.toString() }) { item ->
-                    SwipeToDismissServerCard(
-                        item = item,
-                        onDelete = { serverToDelete = item.server },
-                        onClick = { onServerClick(item.server.id.toString()) }
-                    )
+                    SwipeToDismissServerCard(item = item, onDelete = { serverToDelete = item.server }, onClick = { onServerClick(item.server.id.toString()) })
                 }
             }
         }

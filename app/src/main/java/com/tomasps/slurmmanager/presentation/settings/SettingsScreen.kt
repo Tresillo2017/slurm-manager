@@ -54,7 +54,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val isExpanded = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT
 
     if (isExpanded) {
-        // Split pane: hub nav on left, active sub-page on right
+        // Outer shell has no topBar — left pane (SettingsHubList) owns its own Scaffold+topBar
+        // Right pane sub-pages each own their own Scaffold, filling full height from y=0
         Row(modifier = Modifier.fillMaxSize()) {
             SettingsHubList(
                 state = state,
@@ -73,13 +74,14 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                                 style = MaterialTheme.typography.bodyLarge)
                         }
                     }
-                    SettingsPage.NOTIFICATIONS -> NotificationsPage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
-                    SettingsPage.APPEARANCE -> AppearancePage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
-                    SettingsPage.POLLING -> PollingPage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
-                    SettingsPage.ABOUT -> AboutPage(onBack = { navigate(SettingsPage.HUB, false) })
+                    SettingsPage.NOTIFICATIONS -> NotificationsPage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) }, isInlinePane = true)
+                    SettingsPage.APPEARANCE -> AppearancePage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) }, isInlinePane = true)
+                    SettingsPage.POLLING -> PollingPage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) }, isInlinePane = true)
+                    SettingsPage.ABOUT -> AboutPage(onBack = { navigate(SettingsPage.HUB, false) }, isInlinePane = true)
                 }
             }
         }
+        return
     } else {
         val swipeOffset = remember { Animatable(0f) }
         PredictiveBackHandler(enabled = page != SettingsPage.HUB) { flow ->
@@ -313,10 +315,12 @@ private fun SettingsNavCard(
 private fun NotificationsPage(
     state: SettingsUiState,
     viewModel: SettingsViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isInlinePane: Boolean = false,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
+        contentWindowInsets = if (isInlinePane) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text("Notifications") },
@@ -393,10 +397,12 @@ private fun NotificationsPage(
 private fun AppearancePage(
     state: SettingsUiState,
     viewModel: SettingsViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isInlinePane: Boolean = false,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
+        contentWindowInsets = if (isInlinePane) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text("Appearance") },
@@ -480,7 +486,8 @@ private fun AppearancePage(
 private fun PollingPage(
     state: SettingsUiState,
     viewModel: SettingsViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isInlinePane: Boolean = false,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var sliderValue by remember(state.defaultPollingInterval) {
@@ -488,6 +495,7 @@ private fun PollingPage(
     }
 
     Scaffold(
+        contentWindowInsets = if (isInlinePane) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text("Polling & Sync") },
@@ -598,7 +606,7 @@ private fun PollingPage(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AboutPage(onBack: () -> Unit) {
+private fun AboutPage(onBack: () -> Unit, isInlinePane: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val versionName = remember {
         try {
@@ -617,6 +625,7 @@ private fun AboutPage(onBack: () -> Unit) {
     }
 
     Scaffold(
+        contentWindowInsets = if (isInlinePane) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text("About") },
