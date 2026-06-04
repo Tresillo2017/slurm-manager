@@ -2,9 +2,6 @@ package com.tomasps.slurmmanager.presentation.servers
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -38,8 +35,8 @@ fun ServersScreen(
     var serverToDelete by remember { mutableStateOf<Server?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val isCompact = windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
+    val isExpanded = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT
+    var selectedServerId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -108,7 +105,50 @@ fun ServersScreen(
                     }
                 }
             }
-        } else if (isCompact) {
+        } else if (isExpanded) {
+            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+                // List pane
+                LazyColumn(
+                    modifier = Modifier.weight(0.4f),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(servers, key = { it.server.id.toString() }) { item ->
+                        SwipeToDismissServerCard(
+                            item = item,
+                            onDelete = { serverToDelete = item.server },
+                            onClick = { selectedServerId = item.server.id.toString() }
+                        )
+                    }
+                }
+                VerticalDivider()
+                // Detail pane
+                Box(modifier = Modifier.weight(0.6f).fillMaxHeight()) {
+                    if (selectedServerId != null) {
+                        com.tomasps.slurmmanager.presentation.serverdetail.ServerDetailScreen(
+                            serverId = selectedServerId!!,
+                            onBack = { selectedServerId = null },
+                            onJobClick = { jobId ->
+                                onServerClick(selectedServerId!!) // navigate via nav graph on compact
+                            }
+                        )
+                    } else {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.TouchApp, contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
+                                Text("Select a server to see details",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
             LazyColumn(
                 contentPadding = PaddingValues(
                     start = 16.dp, end = 16.dp,
@@ -116,25 +156,6 @@ fun ServersScreen(
                     bottom = padding.calculateBottomPadding() + 80.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(servers, key = { it.server.id.toString() }) { item ->
-                    SwipeToDismissServerCard(
-                        item = item,
-                        onDelete = { serverToDelete = item.server },
-                        onClick = { onServerClick(item.server.id.toString()) }
-                    )
-                }
-            }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(
-                    start = 16.dp, end = 16.dp,
-                    top = padding.calculateTopPadding() + 8.dp,
-                    bottom = padding.calculateBottomPadding() + 80.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(servers, key = { it.server.id.toString() }) { item ->
                     SwipeToDismissServerCard(

@@ -26,7 +26,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlin.math.roundToInt
@@ -49,77 +48,153 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         page = target
     }
 
-    BackHandler(enabled = page != SettingsPage.HUB) {
-        navigate(SettingsPage.HUB, isForward = false)
-    }
+    val isExpanded = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass != WindowWidthSizeClass.COMPACT
 
-    val enterSpec = spring<Float>(stiffness = Spring.StiffnessMediumLow)
-    AnimatedContent(
-        targetState = page,
-        transitionSpec = {
-            if (forward.value) {
-                (slideInHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeIn(enterSpec)) togetherWith
-                        (slideOutHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { -it } + fadeOut())
-            } else {
-                (slideInHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { -it } + fadeIn(enterSpec)) togetherWith
-                        (slideOutHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeOut())
+    if (isExpanded) {
+        // Split pane: hub nav on left, active sub-page on right
+        Row(modifier = Modifier.fillMaxSize()) {
+            SettingsHubList(
+                state = state,
+                selectedPage = page,
+                onNavigate = { navigate(it) },
+                modifier = Modifier.weight(0.4f)
+            )
+            VerticalDivider()
+            Box(modifier = Modifier.weight(0.6f).fillMaxHeight()) {
+                when (page) {
+                    SettingsPage.HUB -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.TouchApp, contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
+                            Text("Select a category", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                    SettingsPage.NOTIFICATIONS -> NotificationsPage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
+                    SettingsPage.APPEARANCE -> AppearancePage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
+                    SettingsPage.POLLING -> PollingPage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
+                    SettingsPage.ABOUT -> AboutPage(onBack = { navigate(SettingsPage.HUB, false) })
+                }
             }
-        },
-        label = "settings_page"
-    ) { currentPage ->
-        when (currentPage) {
-            SettingsPage.HUB -> SettingsHub(state = state, onNavigate = { navigate(it) })
-            SettingsPage.NOTIFICATIONS -> NotificationsPage(
-                state = state, viewModel = viewModel,
-                onBack = { navigate(SettingsPage.HUB, isForward = false) }
-            )
-            SettingsPage.APPEARANCE -> AppearancePage(
-                state = state, viewModel = viewModel,
-                onBack = { navigate(SettingsPage.HUB, isForward = false) }
-            )
-            SettingsPage.POLLING -> PollingPage(
-                state = state, viewModel = viewModel,
-                onBack = { navigate(SettingsPage.HUB, isForward = false) }
-            )
-            SettingsPage.ABOUT -> AboutPage(onBack = { navigate(SettingsPage.HUB, isForward = false) })
+        }
+    } else {
+        BackHandler(enabled = page != SettingsPage.HUB) {
+            navigate(SettingsPage.HUB, isForward = false)
+        }
+
+        val enterSpec = spring<Float>(stiffness = Spring.StiffnessMediumLow)
+        AnimatedContent(
+            targetState = page,
+            transitionSpec = {
+                if (forward.value) {
+                    (slideInHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeIn(enterSpec)) togetherWith
+                            (slideOutHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { -it } + fadeOut())
+                } else {
+                    (slideInHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { -it } + fadeIn(enterSpec)) togetherWith
+                            (slideOutHorizontally(spring(stiffness = Spring.StiffnessMediumLow)) { it } + fadeOut())
+                }
+            },
+            label = "settings_page"
+        ) { currentPage ->
+            when (currentPage) {
+                SettingsPage.HUB -> SettingsHub(state = state, onNavigate = { navigate(it) })
+                SettingsPage.NOTIFICATIONS -> NotificationsPage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
+                SettingsPage.APPEARANCE -> AppearancePage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
+                SettingsPage.POLLING -> PollingPage(state = state, viewModel = viewModel, onBack = { navigate(SettingsPage.HUB, false) })
+                SettingsPage.ABOUT -> AboutPage(onBack = { navigate(SettingsPage.HUB, false) })
+            }
         }
     }
 }
 
 // ─── Hub ────────────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SettingsHubList(
+    state: SettingsUiState,
+    selectedPage: SettingsPage,
+    onNavigate: (SettingsPage) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeFlexibleTopAppBar(
+                title = { Text("Settings") },
+                subtitle = { Text("Customize your experience") },
+                scrollBehavior = scrollBehavior
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp,
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom = padding.calculateBottomPadding() + 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                SettingsNavCard(
+                    icon = Icons.Default.Notifications,
+                    iconContainerColor = if (selectedPage == SettingsPage.NOTIFICATIONS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
+                    iconContentColor = if (selectedPage == SettingsPage.NOTIFICATIONS) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
+                    title = "Notifications",
+                    subtitle = buildString {
+                        val enabled = listOfNotNull("Jobs".takeIf { state.jobStateNotifs }, "Alerts".takeIf { state.alertNotifs }, "Cluster".takeIf { state.clusterNotifs })
+                        append(if (enabled.isEmpty()) "All disabled" else enabled.joinToString(" · "))
+                    },
+                    onClick = { onNavigate(SettingsPage.NOTIFICATIONS) }
+                )
+            }
+            item {
+                SettingsNavCard(
+                    icon = Icons.Default.Palette,
+                    iconContainerColor = if (selectedPage == SettingsPage.APPEARANCE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.secondaryContainer,
+                    iconContentColor = if (selectedPage == SettingsPage.APPEARANCE) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSecondaryContainer,
+                    title = "Appearance",
+                    subtitle = buildString {
+                        append(state.darkTheme.name.lowercase().replaceFirstChar { it.uppercase() })
+                        if (state.dynamicColor) append(" · Material You")
+                    },
+                    onClick = { onNavigate(SettingsPage.APPEARANCE) }
+                )
+            }
+            item {
+                SettingsNavCard(
+                    icon = Icons.Default.Sync,
+                    iconContainerColor = if (selectedPage == SettingsPage.POLLING) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiaryContainer,
+                    iconContentColor = if (selectedPage == SettingsPage.POLLING) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onTertiaryContainer,
+                    title = "Polling & Sync",
+                    subtitle = buildString {
+                        append("Every ${state.defaultPollingInterval}m")
+                        if (state.batterySaver) append(" · Battery saver on")
+                        if (!state.backgroundSync) append(" · Background off")
+                    },
+                    onClick = { onNavigate(SettingsPage.POLLING) }
+                )
+            }
+            item {
+                SettingsNavCard(
+                    icon = Icons.Default.Info,
+                    iconContainerColor = if (selectedPage == SettingsPage.ABOUT) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    title = "About",
+                    subtitle = "SLURM Manager v1.0",
+                    onClick = { onNavigate(SettingsPage.ABOUT) }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SettingsHub(
     state: SettingsUiState,
     onNavigate: (SettingsPage) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val isCompact = windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
-    val isExpanded = windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED
-
-    val navCards = listOf(
-        Triple(Icons.Default.Notifications, MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
-            Triple("Notifications", buildString {
-                val enabled = listOfNotNull("Jobs".takeIf { state.jobStateNotifs }, "Alerts".takeIf { state.alertNotifs }, "Cluster".takeIf { state.clusterNotifs })
-                append(if (enabled.isEmpty()) "All disabled" else enabled.joinToString(" · "))
-            }, SettingsPage.NOTIFICATIONS)),
-        Triple(Icons.Default.Palette, MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
-            Triple("Appearance", buildString {
-                append(state.darkTheme.name.lowercase().replaceFirstChar { it.uppercase() })
-                if (state.dynamicColor) append(" · Material You")
-            }, SettingsPage.APPEARANCE)),
-        Triple(Icons.Default.Sync, MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
-            Triple("Polling & Sync", buildString {
-                append("Every ${state.defaultPollingInterval}m")
-                if (state.batterySaver) append(" · Battery saver on")
-                if (!state.backgroundSync) append(" · Background off")
-            }, SettingsPage.POLLING)),
-        Triple(Icons.Default.Info, MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant,
-            Triple("About", "SLURM Manager v1.0", SettingsPage.ABOUT)),
-    )
-
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
@@ -130,40 +205,52 @@ private fun SettingsHub(
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { padding ->
-        val contentPadding = PaddingValues(
-            start = 16.dp, end = 16.dp,
-            top = padding.calculateTopPadding() + 8.dp,
-            bottom = padding.calculateBottomPadding() + 16.dp
-        )
-        if (isCompact) {
-            LazyColumn(contentPadding = contentPadding, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                navCards.forEach { (icon, colors, info) ->
-                    item {
-                        SettingsNavCard(icon = icon, iconContainerColor = colors.first,
-                            iconContentColor = colors.second, title = info.first,
-                            subtitle = info.second, onClick = { onNavigate(info.third) })
-                    }
-                }
+        LazyColumn(
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp,
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom = padding.calculateBottomPadding() + 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                SettingsNavCard(icon = Icons.Default.Notifications,
+                    iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    title = "Notifications",
+                    subtitle = buildString {
+                        val enabled = listOfNotNull("Jobs".takeIf { state.jobStateNotifs }, "Alerts".takeIf { state.alertNotifs }, "Cluster".takeIf { state.clusterNotifs })
+                        append(if (enabled.isEmpty()) "All disabled" else enabled.joinToString(" · "))
+                    },
+                    onClick = { onNavigate(SettingsPage.NOTIFICATIONS) })
             }
-        } else {
-            // Medium/expanded: 2-column grid, optionally centered on very wide screens
-            val maxWidth = if (isExpanded) 840.dp else Dp.Unspecified
-            Box(modifier = Modifier.fillMaxSize().padding(contentPadding), contentAlignment = Alignment.TopCenter) {
-                val gridModifier = if (isExpanded) Modifier.widthIn(max = maxWidth) else Modifier.fillMaxWidth()
-                androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                    columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
-                    modifier = gridModifier,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    navCards.forEach { (icon, colors, info) ->
-                        item {
-                            SettingsNavCard(icon = icon, iconContainerColor = colors.first,
-                                iconContentColor = colors.second, title = info.first,
-                                subtitle = info.second, onClick = { onNavigate(info.third) })
-                        }
-                    }
-                }
+            item {
+                SettingsNavCard(icon = Icons.Default.Palette,
+                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    title = "Appearance",
+                    subtitle = buildString {
+                        append(state.darkTheme.name.lowercase().replaceFirstChar { it.uppercase() })
+                        if (state.dynamicColor) append(" · Material You")
+                    },
+                    onClick = { onNavigate(SettingsPage.APPEARANCE) })
+            }
+            item {
+                SettingsNavCard(icon = Icons.Default.Sync,
+                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    title = "Polling & Sync",
+                    subtitle = buildString {
+                        append("Every ${state.defaultPollingInterval}m")
+                        if (state.batterySaver) append(" · Battery saver on")
+                        if (!state.backgroundSync) append(" · Background off")
+                    },
+                    onClick = { onNavigate(SettingsPage.POLLING) })
+            }
+            item {
+                SettingsNavCard(icon = Icons.Default.Info,
+                    iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    title = "About", subtitle = "SLURM Manager v1.0",
+                    onClick = { onNavigate(SettingsPage.ABOUT) })
             }
         }
     }
