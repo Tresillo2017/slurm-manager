@@ -337,14 +337,13 @@ fun JobDetailScreen(
             }
         }
 
-        // FAB menu — overlaid at bottom-end, above the floating pill nav bar
         job?.let { j ->
             FloatingActionButtonMenu(
                 expanded = fabMenuExpanded,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .navigationBarsPadding()
-                    .padding(end = 16.dp, bottom = 96.dp),
+                    .padding(end = 16.dp, bottom = 16.dp),
                 button = {
                     ToggleFloatingActionButton(
                         checked = fabMenuExpanded,
