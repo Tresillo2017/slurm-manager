@@ -15,7 +15,6 @@ val appVersionName = "$vMajor.$vMinor.$vPatch"
 
 plugins {
     alias(libs.plugins.android.application)
-    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
