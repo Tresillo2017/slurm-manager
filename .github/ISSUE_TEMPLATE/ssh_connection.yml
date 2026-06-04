@@ -1,0 +1,69 @@
+name: SSH / Connection Issue
+description: Problems connecting to a cluster or authenticating
+title: "[SSH]: "
+labels: ["bug", "ssh", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SSH issues are often environment-specific. The more detail you provide, the faster we can help.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the problem
+      placeholder: "Connection times out / auth fails / key not accepted…"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: auth_method
+    attributes:
+      label: Auth method
+      options:
+        - Password
+        - SSH Key (Ed25519)
+        - SSH Key (RSA)
+        - SSH Key (ECDSA)
+    validations:
+      required: true
+
+  - type: input
+    id: slurm_version
+    attributes:
+      label: Slurm version on the cluster
+      placeholder: "e.g. 23.11.4"
+
+  - type: input
+    id: ssh_server
+    attributes:
+      label: SSH server / OS
+      placeholder: "e.g. OpenSSH 9.3, Ubuntu 22.04"
+
+  - type: input
+    id: android_version
+    attributes:
+      label: Android version
+      placeholder: "e.g. Android 14 (API 34)"
+    validations:
+      required: true
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      placeholder: "e.g. v1.2.0 (build 42)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message / logcat
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Network setup, VPN, jump host, firewall rules, etc.

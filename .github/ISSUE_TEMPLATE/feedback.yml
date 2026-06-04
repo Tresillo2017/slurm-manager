@@ -1,0 +1,58 @@
+name: General Feedback
+description: Share your experience, usability thoughts, or general comments
+title: "[Feedback]: "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We appreciate all feedback — positive or constructive. Tell us what's on your mind.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Feedback type
+      options:
+        - Usability / UX
+        - Performance
+        - Design / Visuals
+        - Documentation
+        - General praise
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Your feedback
+      placeholder: "Share your thoughts…"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area (optional)
+      options:
+        - SSH / Connection
+        - Job list / Dashboard
+        - Job detail
+        - Job submission
+        - Notifications / Alerts
+        - Server management
+        - Settings
+        - Navigation / UI
+        - Overall app
+        - N/A
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      placeholder: "e.g. v1.2.0"
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
