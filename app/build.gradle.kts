@@ -1,3 +1,14 @@
+import java.util.Properties
+
+val versionProps = Properties().apply {
+    load(rootProject.file("version.properties").inputStream())
+}
+val vMajor = versionProps["VERSION_MAJOR"].toString().toInt()
+val vMinor = versionProps["VERSION_MINOR"].toString().toInt()
+val vPatch = versionProps["VERSION_PATCH"].toString().toInt()
+val appVersionCode = vMajor * 10000 + vMinor * 100 + vPatch
+val appVersionName = "$vMajor.$vMinor.$vPatch"
+
 plugins {
     alias(libs.plugins.android.application)
     id("org.jetbrains.kotlin.android")
@@ -15,15 +26,25 @@ android {
         applicationId = "com.tomasps.slurmmanager"
         minSdk = 30
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = appVersionCode
+        versionName = "$appVersionName+$appVersionCode"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = System.getenv("KEYSTORE_PATH")?.let { file(it) }
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
