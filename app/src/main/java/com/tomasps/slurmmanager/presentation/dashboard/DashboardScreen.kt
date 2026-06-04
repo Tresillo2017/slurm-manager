@@ -97,7 +97,7 @@ fun DashboardScreen(
                     topPadding = padding.calculateTopPadding(),
                 )
                 VerticalDivider()
-                Box(Modifier.weight(0.6f).fillMaxHeight().padding(top = padding.calculateTopPadding())) {
+                Box(Modifier.weight(0.6f).fillMaxHeight()) {
                     if (selectedJob != null) {
                         com.tomasps.slurmmanager.presentation.jobdetail.JobDetailScreen(
                             jobId = selectedJob!!.jobId,
