@@ -12,14 +12,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.tomasps.slurmmanager.presentation.dashboard.DashboardScreen
+import com.tomasps.slurmmanager.presentation.HomeScreen
 import com.tomasps.slurmmanager.presentation.onboarding.OnboardingScreen
-import com.tomasps.slurmmanager.presentation.servers.ServersScreen
 import com.tomasps.slurmmanager.presentation.serverdetail.ServerDetailScreen
-import com.tomasps.slurmmanager.presentation.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
+    data object Home : Screen("home")
     data object Dashboard : Screen("dashboard")
     data object Servers : Screen("servers")
     data object Settings : Screen("settings")
@@ -33,6 +32,8 @@ sealed class Screen(val route: String) {
 fun NavGraph(
     navController: NavHostController,
     startDestination: String,
+    tabIndex: Int = 0,
+    onTabChange: (Int) -> Unit = {},
     showSubmitJob: Boolean = false,
     onDismissSubmitJob: () -> Unit = {},
     onAddServerNavigation: () -> Unit = {}
@@ -47,26 +48,24 @@ fun NavGraph(
     ) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(onFinished = {
-                navController.navigate(Screen.Dashboard.route) {
+                navController.navigate(Screen.Home.route) {
                     popUpTo(Screen.Onboarding.route) { inclusive = true }
                 }
             })
         }
-        composable(Screen.Dashboard.route) {
-            DashboardScreen(
+        composable(Screen.Home.route) {
+            HomeScreen(
+                tabIndex = tabIndex,
+                onTabChange = onTabChange,
+                showSubmitJob = showSubmitJob,
+                onDismissSubmitJob = onDismissSubmitJob,
                 onJobClick = { jobId, serverId ->
                     navController.navigate("job/$jobId/$serverId")
                 },
-                showSubmitJob = showSubmitJob,
-                onDismissSubmitJob = onDismissSubmitJob
-            )
-        }
-        composable(Screen.Servers.route) {
-            ServersScreen(
                 onServerClick = { serverId ->
                     navController.navigate(Screen.ServerDetail.route(serverId))
                 },
-                onAddServer = { navController.navigate(Screen.AddServer.route) }
+                onAddServer = { navController.navigate(Screen.AddServer.route) },
             )
         }
         composable(
@@ -88,7 +87,6 @@ fun NavGraph(
                 onFinished = { navController.popBackStack() }
             )
         }
-        composable(Screen.Settings.route) { SettingsScreen() }
         composable(
             route = "job/{jobId}/{serverId}",
             arguments = listOf(

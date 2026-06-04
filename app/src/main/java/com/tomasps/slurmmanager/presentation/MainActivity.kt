@@ -15,6 +15,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -88,12 +89,11 @@ class MainActivity : ComponentActivity() {
 
             SlrumManagerTheme(darkTheme = darkTheme, dynamicColor = dynamicColor, amoledBlack = amoledBlack) {
                 val navController = rememberNavController()
-                val startDestination = if (isFirstLaunch) Screen.Onboarding.route else Screen.Dashboard.route
+                val startDestination = if (isFirstLaunch) Screen.Onboarding.route else Screen.Home.route
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                val showNav = currentRoute != Screen.Onboarding.route &&
-                        currentRoute != Screen.AddServer.route
+                val showNav = currentRoute == Screen.Home.route
 
                 val navItems = listOf(
                     NavItem(Screen.Dashboard.route, "Dashboard", Icons.Default.Dashboard),
@@ -101,22 +101,27 @@ class MainActivity : ComponentActivity() {
                     NavItem(Screen.Settings.route, "Settings", Icons.Default.Settings),
                 )
 
+                var tabIndex by remember { mutableIntStateOf(0) }
                 var showSubmitJob by remember { mutableStateOf(false) }
-                var showAddServer by remember { mutableStateOf(false) }
 
-                LaunchedEffect(currentRoute) {
-                    showSubmitJob = false
-                    showAddServer = false
-                }
+                // Map tab index to a "route" so the nav bar and FAB logic still work
+                val tabRoutes = listOf(Screen.Dashboard.route, Screen.Servers.route, Screen.Settings.route)
+                val effectiveRoute = if (showNav) tabRoutes.getOrElse(tabIndex) { Screen.Dashboard.route } else currentRoute
 
-                val showFab = showNav && (currentRoute == Screen.Dashboard.route || currentRoute == Screen.Servers.route)
-                val fabLabel = if (currentRoute == Screen.Servers.route) "Add Server" else "Submit Job"
+                val showFab = showNav && (tabIndex == 0 || tabIndex == 1)
+                val fabLabel = if (tabIndex == 1) "Add Server" else "Submit Job"
                 val fabIcon = Icons.Default.Add
 
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
                     NavGraph(
                         navController = navController,
                         startDestination = startDestination,
+                        tabIndex = tabIndex,
+                        onTabChange = { tabIndex = it },
                         showSubmitJob = showSubmitJob,
                         onDismissSubmitJob = { showSubmitJob = false },
                         onAddServerNavigation = { navController.navigate(Screen.AddServer.route) }
@@ -134,7 +139,7 @@ class MainActivity : ComponentActivity() {
                             if (showFab) {
                                 ExtendedFloatingActionButton(
                                     onClick = {
-                                        if (currentRoute == Screen.Servers.route) {
+                                        if (tabIndex == 1) {
                                             navController.navigate(Screen.AddServer.route)
                                         } else {
                                             showSubmitJob = true
@@ -147,15 +152,10 @@ class MainActivity : ComponentActivity() {
 
                             FloatingPillNavBar(
                                 items = navItems,
-                                currentRoute = currentRoute,
+                                currentRoute = effectiveRoute,
                                 onItemClick = { route ->
-                                    if (currentRoute != route) {
-                                        navController.navigate(route) {
-                                            popUpTo(Screen.Dashboard.route) { saveState = true }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    }
+                                    val idx = tabRoutes.indexOf(route)
+                                    if (idx >= 0) tabIndex = idx
                                 }
                             )
                         }
