@@ -19,7 +19,31 @@ SLURM Manager connects to one or more HPC clusters over SSH and lets you monitor
 
 ## Screenshots
 
-> _Coming soon_
+### Phone
+
+<p align="center">
+  <img src="screenshots/phone/homescreen.png" alt="Home screen" width="18%"/>
+  <img src="screenshots/phone/jobdetail.png" alt="Job detail" width="18%"/>
+  <img src="screenshots/phone/servers.png" alt="Servers" width="18%"/>
+  <img src="screenshots/phone/servers-detail.png" alt="Server detail" width="18%"/>
+  <img src="screenshots/phone/settings-about.png" alt="Settings / About" width="18%"/>
+</p>
+
+### Tablet
+
+<p align="center">
+  <img src="screenshots/tablet/homescreen.png" alt="Home screen (tablet)" width="30%"/>
+  <img src="screenshots/tablet/servers.png" alt="Servers (tablet)" width="30%"/>
+  <img src="screenshots/tablet/settings.png" alt="Settings (tablet)" width="30%"/>
+</p>
+
+### Medium tablet
+
+<p align="center">
+  <img src="screenshots/medium-tablet/homescreen.png" alt="Home screen (medium tablet)" width="28%"/>
+  <img src="screenshots/medium-tablet/server.png" alt="Server detail (medium tablet)" width="28%"/>
+  <img src="screenshots/medium-tablet/settings-page.png" alt="Settings (medium tablet)" width="28%"/>
+</p>
 
 ---
 
