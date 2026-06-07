@@ -23,11 +23,11 @@ plugins {
 }
 
 android {
-    namespace = "com.tomasps.slurmmanager"
+    namespace = "com.tomasps.slurmmanag"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.tomasps.slurmmanager"
+        applicationId = "com.tomasps.slurmmanag"
         minSdk = 30
         targetSdk = 37
         versionCode = appVersionCode
