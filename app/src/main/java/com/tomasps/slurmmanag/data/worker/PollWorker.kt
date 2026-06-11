@@ -1,6 +1,7 @@
 package com.tomasps.slurmmanag.data.worker
 
 import android.content.Context
+import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.tomasps.slurmmanag.data.credential.CredentialStore
@@ -10,6 +11,9 @@ import com.tomasps.slurmmanag.data.remote.ssh.SshClient
 import com.tomasps.slurmmanag.domain.model.ServerStatus
 import com.tomasps.slurmmanag.domain.repository.JobRepository
 import com.tomasps.slurmmanag.domain.repository.ServerRepository
+import com.tomasps.slurmmanag.widget.ServerStatusWidget
+import com.tomasps.slurmmanag.widget.SlurmWidget
+import com.tomasps.slurmmanag.widget.WatchedJobsWidget
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.UUID
@@ -125,6 +129,10 @@ class PollWorker @AssistedInject constructor(
             }
 
             serverRepository.updateStatus(serverId, ServerStatus.ONLINE, nowMs)
+
+            SlurmWidget().updateAll(applicationContext)
+            ServerStatusWidget().updateAll(applicationContext)
+            WatchedJobsWidget().updateAll(applicationContext)
 
             if (server.pollingIntervalMinutes < 15) {
                 enqueue(applicationContext, serverId, server.pollingIntervalMinutes)

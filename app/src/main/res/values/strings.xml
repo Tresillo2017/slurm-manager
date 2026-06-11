@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Slrum Manager</string>
+
+    <!-- Widget names and descriptions -->
+    <string name="widget_job_counts_name">Job Counts</string>
+    <string name="widget_job_counts_description">Shows running, queued, failed and completed job counts across all your SLURM servers.</string>
+
+    <string name="widget_server_status_name">Server Status</string>
+    <string name="widget_server_status_description">Shows the online/offline status and last-polled time for your SLURM servers.</string>
+
+    <string name="widget_watched_jobs_name">Watched Jobs</string>
+    <string name="widget_watched_jobs_description">Lists the jobs you are watching with their current state, server and runtime.</string>
+
+    <string name="widget_quick_actions_name">Quick Actions</string>
+    <string name="widget_quick_actions_description">Refresh all servers and open the Slurm Manager dashboard from your home screen.</string>
 </resources>

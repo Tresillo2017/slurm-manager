@@ -178,41 +178,51 @@ class NotificationEngine @Inject constructor(
         val notifId = ("live_$jobId").hashCode()
         val pi = mainActivityIntent(notifId, jobId, null)
 
-        val (icon, stateLabel, color, showProgress, indeterminate) = when (state) {
-            JobState.RUNNING -> LiveNotifParams(
-                icon = R.drawable.ic_job_running,
-                stateLabel = "Running",
-                color = android.graphics.Color.parseColor("#2E7D32"),
-                showProgress = true,
-                indeterminate = true
+        val (icon, stateLabel, color) = when (state) {
+            JobState.RUNNING -> Triple(
+                R.drawable.ic_job_running,
+                "Running",
+                android.graphics.Color.parseColor("#2E7D32")
             )
-            JobState.COMPLETING -> LiveNotifParams(
-                icon = R.drawable.ic_job_running,
-                stateLabel = "Completing",
-                color = android.graphics.Color.parseColor("#558B2F"),
-                showProgress = true,
-                indeterminate = false
+            JobState.COMPLETING -> Triple(
+                R.drawable.ic_job_running,
+                "Completing",
+                android.graphics.Color.parseColor("#558B2F")
             )
-            JobState.PENDING -> LiveNotifParams(
-                icon = R.drawable.ic_alert,
-                stateLabel = "Queued",
-                color = android.graphics.Color.parseColor("#E65100"),
-                showProgress = false,
-                indeterminate = false
+            JobState.PENDING -> Triple(
+                R.drawable.ic_alert,
+                "Queued",
+                android.graphics.Color.parseColor("#E65100")
             )
-            JobState.SUSPENDED -> LiveNotifParams(
-                icon = R.drawable.ic_alert,
-                stateLabel = "Suspended",
-                color = android.graphics.Color.parseColor("#616161"),
-                showProgress = false,
-                indeterminate = false
+            JobState.SUSPENDED -> Triple(
+                R.drawable.ic_alert,
+                "Suspended",
+                android.graphics.Color.parseColor("#616161")
             )
-            else -> LiveNotifParams(
-                icon = R.drawable.ic_job_running,
-                stateLabel = state.name.lowercase().replaceFirstChar { it.uppercase() },
-                color = android.graphics.Color.parseColor("#455A64"),
-                showProgress = false,
-                indeterminate = false
+            JobState.FAILED -> Triple(
+                R.drawable.ic_job_failed,
+                "Failed",
+                android.graphics.Color.parseColor("#B71C1C")
+            )
+            JobState.COMPLETED -> Triple(
+                R.drawable.ic_job_completed,
+                "Completed",
+                android.graphics.Color.parseColor("#1B5E20")
+            )
+            JobState.CANCELLED -> Triple(
+                R.drawable.ic_job_failed,
+                "Cancelled",
+                android.graphics.Color.parseColor("#37474F")
+            )
+            JobState.TIMEOUT -> Triple(
+                R.drawable.ic_alert,
+                "Timeout",
+                android.graphics.Color.parseColor("#BF360C")
+            )
+            else -> Triple(
+                R.drawable.ic_job_running,
+                state.name.lowercase().replaceFirstChar { it.uppercase() },
+                android.graphics.Color.parseColor("#455A64")
             )
         }
 
@@ -222,14 +232,10 @@ class NotificationEngine @Inject constructor(
             .setContentTitle(jobName)
             .setContentText(stateLabel)
             .setSubText("#$jobId")
-            .setStyle(NotificationCompat.BigTextStyle().bigText(stateLabel))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setContentIntent(pi)
-            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-
-        if (showProgress) builder.setProgress(100, 0, indeterminate)
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             builder.setRequestPromotedOngoing(true)
@@ -237,14 +243,6 @@ class NotificationEngine @Inject constructor(
 
         runCatching { NotificationManagerCompat.from(context).notify(notifId, builder.build()) }
     }
-
-    private data class LiveNotifParams(
-        val icon: Int,
-        val stateLabel: String,
-        val color: Int,
-        val showProgress: Boolean,
-        val indeterminate: Boolean
-    )
 
     private fun mainActivityIntent(requestCode: Int, jobId: String, serverId: String?): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {

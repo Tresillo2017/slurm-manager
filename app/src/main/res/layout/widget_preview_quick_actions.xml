@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preview shown in the widget picker for the Quick Actions widget -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp"
+    android:background="@android:color/system_accent2_100">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Slurm Manager"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/system_on_surface_dark"
+        android:layout_marginBottom="14dp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <!-- Refresh button -->
+        <LinearLayout
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/widget_preview_circle_primary">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_job_running"
+                android:tint="@android:color/system_accent1_100" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="16dp"
+            android:layout_height="1dp" />
+
+        <!-- Dashboard button -->
+        <LinearLayout
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/widget_preview_circle_secondary">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_notification"
+                android:tint="@android:color/system_accent2_100" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

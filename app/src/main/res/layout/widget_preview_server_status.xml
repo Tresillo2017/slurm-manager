@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preview shown in the widget picker for the Server Status widget -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/system_accent2_100">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Servers"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/system_on_surface_dark"
+        android:layout_marginBottom="10dp" />
+
+    <!-- Server row 1: online -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/widget_preview_row_bg"
+        android:padding="8dp"
+        android:layout_marginBottom="6dp">
+
+        <View
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:background="@drawable/widget_preview_dot_green" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="gpu-cluster"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/system_on_surface_dark" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2m ago"
+                android:textSize="10sp"
+                android:textColor="#616161" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Online"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="#A5D6A7"
+            android:background="@drawable/widget_preview_badge_green"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp" />
+    </LinearLayout>
+
+    <!-- Server row 2: unreachable -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/widget_preview_row_bg"
+        android:padding="8dp">
+
+        <View
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:background="@drawable/widget_preview_dot_red" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="cpu-cluster"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/system_on_surface_dark" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15m ago"
+                android:textSize="10sp"
+                android:textColor="#616161" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Unreachable"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="#EF9A9A"
+            android:background="@drawable/widget_preview_badge_red"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp" />
+    </LinearLayout>
+</LinearLayout>
